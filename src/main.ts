@@ -4,6 +4,7 @@ import { envs } from './config/envs';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { Transport } from '@nestjs/microservices';
 import { NestFactory } from '@nestjs/core';
+import { RpcExceptionInterceptor } from './common';
 
 async function bootstrap() {
   const logger = new Logger('Orders-MS-Main');
@@ -12,11 +13,14 @@ async function bootstrap() {
     {
       transport: Transport.NATS,
       options: {
-        servers: envs.natServers
+        servers: envs.natServers,
       },
     },
   );
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+  );
+  app.useGlobalInterceptors(new RpcExceptionInterceptor())
   await app.listen();
   logger.log(`Microservice is running on port ${envs.port}`);
 }

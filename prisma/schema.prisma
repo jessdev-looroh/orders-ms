@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,33 +7,94 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum OrderType {
+  DINE_IN
+  PICKUP
+  DELIVERY
+}
+
 enum OrderStatus {
-  PENDING
+  CREATED
+  CONFIRMED
+  COOKING
+  READY
+  READY_FOR_PICKUP
+  PICKED_UP
+  READY_FOR_DELIVERY
+  OUT_FOR_DELIVERY
   DELIVERED
+  SERVED
+  COMPLETED
   CANCELLED
 }
 
 model Order {
-  id          String @id @default(uuid())
+  id     String      @id @default(uuid())
+  type   OrderType   @default(DINE_IN)
+  status OrderStatus @default(CREATED)
+
   totalAmount Float
   totalItems  Int
 
-  status OrderStatus @default(PENDING)
-  paid   Boolean     @default(false)
-  paidAt DateTime?
+  paid            Boolean   @default(false)
+  paidAt          DateTime?
+  paymentChargeId String?
+
+  tableNumber     String? // Dine in
+  pickupTime      DateTime? // Pickup
+  deliveryAddress String? // Delivery
+  customerId      String? // Opcional: si hay autenticación de clientes
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  OrderItem OrderItem[]
+  OrderItem      OrderItem[]
+  OrderStatusLog OrderStatusLog[]
+  OrderReceipt   OrderReceipt?
 }
 
 model OrderItem {
-  id        String @id @default(uuid())
+  id        String  @id @default(uuid())
   productId Int
+  name      String?
   quantity  Int
   price     Float
+  notes     String?
+
+  itemStatus OrderItemStatus @default(PENDING)
 
   Order   Order?  @relation(fields: [orderId], references: [id])
   orderId String?
+}
+
+enum OrderItemStatus {
+  PENDING
+  COOKING
+  READY
+  SERVED
+  CANCELLED
+}
+
+model OrderStatusLog {
+  id        String       @id @default(uuid())
+  orderId   String
+  oldStatus OrderStatus?
+  newStatus OrderStatus
+  changedBy String?
+  timestamp DateTime     @default(now())
+  Order     Order        @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([timestamp])
+}
+
+model OrderReceipt {
+  id      String @id @default(uuid())
+  order   Order  @relation(fields: [orderId], references: [id])
+  orderId String @unique
+
+  receiptUrl String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

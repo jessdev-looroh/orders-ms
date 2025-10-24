@@ -12,7 +12,7 @@
     "start:dev": "yarn run prisma:dev && nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "prisma:dev": "yarn prisma migrate reset --force && yarn prisma generate",
+    "prisma:dev": "yarn prisma migrate reset --force && yarn prisma migrate dev --name auto-$(date +%Y%m%d%H%M%S) && prisma generate",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
